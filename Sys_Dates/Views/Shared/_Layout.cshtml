@@ -1,0 +1,309 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Sys_Dates</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Sys_Dates.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Sys_Dates</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+
+        <!-- BOTON DE FORMULARIO -->
+        <button class="btn btn-primary mb-3" onclick="abrirCrear()">+ Nueva Fecha</button>
+
+        <!-- LISTA DE PERSONAS -->
+        <div id="lista-personas" class="mt-4"></div>
+
+        <!-- MODAL CREATE / EDIT -->
+        <div class="modal fade" id="modalFecha" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitulo">Nueva Fecha</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="formFecha">
+
+                            <input type="hidden" id="id">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Título</label>
+                                    <input class="form-control" id="title" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Categoría</label>
+                                    <input class="form-control" id="category">
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="description"></textarea>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Locación</label>
+                                    <input class="form-control" id="location">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo</label>
+                                    <input class="form-control" id="type">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Prioridad</label>
+                                    <input class="form-control" id="priority">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Status</label>
+                                    <input class="form-control" id="status">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Inicio</label>
+                                    <input type="datetime-local" class="form-control" id="startDate">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Fin</label>
+                                    <input type="datetime-local" class="form-control" id="endDate">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">URL</label>
+                                    <input class="form-control" id="url">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Todo el día</label>
+                                    <input type="checkbox" id="allDay">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Recordatorio enviado</label>
+                                    <input type="checkbox" id="reminderSent">
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" onclick="guardar()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - Sys_Dates - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        const API = "https://DomainName/api/Dates";
+        let modal = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            modal = new bootstrap.Modal(document.getElementById("modalFecha"));
+            cargarDatos();
+        });
+
+        // GET
+        async function cargarDatos() {
+            try {
+                const response = await fetch(API);
+                const data = await response.json();
+                renderizarTabla(data);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // TABLA
+        function renderizarTabla(lista) {
+            let contenedor = document.getElementById("lista-personas");
+
+            let html = `
+                <table class="table table-bordered table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Tipo</th>
+                            <th>Prioridad</th>
+                            <th>Status</th>
+                            <th>Locación</th>
+                            <th>URL</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Todo el día</th>
+                            <th>Recordatorio</th>
+                            <th>Creado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            lista.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.title || ""}</td>
+                        <td>${item.description ? item.description.substring(0, 40) + "..." : ""}</td>
+                        <td>${item.category || ""}</td>
+                        <td>${item.type || ""}</td>
+                        <td>${item.priority || ""}</td>
+                        <td>${item.status || ""}</td>
+                        <td>${item.location || ""}</td>
+                        <td>${item.url ? `<a href="${item.url}" target="_blank">Link</a>` : ""}</td>
+
+                        <td>${item.startDate ? new Date(item.startDate).toLocaleString() : ""}</td>
+                        <td>${item.endDate ? new Date(item.endDate).toLocaleString() : "-"}</td>
+
+                        <td>${item.allDay ? "Sí" : "No"}</td>
+                        <td>${item.reminderSent ? "Sí" : "No"}</td>
+
+                        <td>${item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</td>
+
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick='abrirEditar(${JSON.stringify(item)})'>
+                                Editar
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminar(${item.id})">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+
+            contenedor.innerHTML = html;
+        }
+
+
+        // CREAR 
+        function abrirCrear() {
+            document.getElementById("modalTitulo").innerText = "Nueva Fecha";
+            document.getElementById("formFecha").reset();
+            document.getElementById("id").value = "";
+            modal.show();
+        }
+
+        // EDITAR 
+        function abrirEditar(item) {
+            document.getElementById("modalTitulo").innerText = "Editar Fecha";
+
+            document.getElementById("id").value = item.id;
+            document.getElementById("title").value = item.title;
+            document.getElementById("category").value = item.category;
+            document.getElementById("description").value = item.description;
+            document.getElementById("location").value = item.location;
+            document.getElementById("type").value = item.type;
+            document.getElementById("priority").value = item.priority;
+            document.getElementById("status").value = item.status;
+            document.getElementById("url").value = item.url;
+
+            document.getElementById("allDay").checked = item.allDay;
+            document.getElementById("reminderSent").checked = item.reminderSent;
+
+            document.getElementById("startDate").value = item.startDate?.substring(0, 16);
+            document.getElementById("endDate").value = item.endDate?.substring(0, 16);
+
+            modal.show();
+        }
+
+        // SAVE (POST/PUT) 
+        async function guardar() {
+
+            const id = document.getElementById("id").value;
+
+            const obj = {
+                id: id ? Number(id) : 0,
+                title: document.getElementById("title").value,
+                category: document.getElementById("category").value,
+                description: document.getElementById("description").value,
+                location: document.getElementById("location").value,
+                type: document.getElementById("type").value,
+                priority: document.getElementById("priority").value,
+                status: document.getElementById("status").value,
+                url: document.getElementById("url").value,
+                startDate: document.getElementById("startDate").value,
+                endDate: document.getElementById("endDate").value || null,
+                allDay: document.getElementById("allDay").checked,
+                reminderSent: document.getElementById("reminderSent").checked,
+                createdAt: new Date().toISOString()
+            };
+
+            const method = id ? "PUT" : "POST";
+            const endpoint = id ? `${API}/${id}` : API;
+
+            await fetch(endpoint, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(obj)
+            });
+
+            modal.hide();
+            cargarDatos();
+        }
+
+        // DELETE
+        async function eliminar(id) {
+            if (!confirm("¿Eliminar registro?")) return;
+
+            await fetch(`${API}/${id}`, { method: "DELETE" });
+            cargarDatos();
+        }
+    </script>
+
+
+</body>
+</html>
